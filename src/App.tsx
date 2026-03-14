@@ -4,6 +4,11 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import Feed from "./pages/Feed";
+import ProfilePage from "./pages/ProfilePage";
+import DiscoverPage from "./pages/DiscoverPage";
+import UploadPage from "./pages/UploadPage";
+import InboxPage from "./pages/InboxPage";
+import SoundPage from "@/components/tiktok/SoundPage";
 import AdminLayout from "./layouts/AdminLayout";
 import Dashboard from "./pages/admin/Dashboard";
 import UsersPage from "./pages/admin/UsersPage";
@@ -22,6 +27,11 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Feed />} />
+          <Route path="/profile/:username" element={<ProfilePage />} />
+          <Route path="/discover" element={<DiscoverPage />} />
+          <Route path="/upload" element={<UploadPage />} />
+          <Route path="/inbox" element={<InboxPage />} />
+          <Route path="/sound/:songName" element={<SoundPage />} />
           <Route path="/admin" element={<AdminLayout />}>
             <Route index element={<Dashboard />} />
             <Route path="users" element={<UsersPage />} />
