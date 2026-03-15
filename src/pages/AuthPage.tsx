@@ -5,14 +5,12 @@ import { Mail, Lock, User, Eye, EyeOff, ArrowLeft, CircleAlert as AlertCircle, C
 import { FcGoogle } from "react-icons/fc";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
-import { RecaptchaVerifier } from "@/lib/firebase";
-import { auth, isConfigured } from "@/lib/firebase";
 
 type Mode = "landing" | "email-login" | "email-signup" | "username-login" | "forgot-password";
 
 export default function AuthPage() {
   const navigate = useNavigate();
-  const { signInWithGoogle, signInWithEmail, signUpWithEmail, signInWithUsername, forgotPassword, isFirebaseReady } = useAuth();
+  const { signInWithGoogle, signInWithEmail, signUpWithEmail, signInWithUsername, forgotPassword, isSupabaseReady } = useAuth();
 
   const [mode, setMode] = useState<Mode>("landing");
   const [loading, setLoading] = useState(false);
@@ -121,10 +119,10 @@ export default function AuthPage() {
               <p className="text-muted-foreground font-body text-sm mt-1">Videos, vibes, and viral moments</p>
             </div>
 
-            {!isFirebaseReady && (
+            {!isSupabaseReady && (
               <div className="w-full bg-amber-500/10 border border-amber-500/30 rounded-xl p-3 flex items-start gap-2">
                 <AlertCircle className="w-4 h-4 text-amber-400 mt-0.5 flex-shrink-0" />
-                <p className="text-xs text-amber-300 font-body">Demo mode: Firebase not configured. Login still works with local storage.</p>
+                <p className="text-xs text-amber-300 font-body">Demo mode: Supabase not configured. Login still works with local storage.</p>
               </div>
             )}
 
