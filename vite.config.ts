@@ -86,14 +86,10 @@ export default defineConfig({
       overlay: false,
     },
   },
-  cacheDir: path.resolve(__dirname, 'node_modules/.vite'),
   plugins: [react(), generateServerPlugin()],
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },
-  },
-  optimizeDeps: {
-    force: true,
   },
 });
