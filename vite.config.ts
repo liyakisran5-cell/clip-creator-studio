@@ -93,7 +93,12 @@ export default defineConfig({
     },
   },
   optimizeDeps: {
-    exclude: ['firebase', '@firebase/auth', '@firebase/app'],
+    exclude: [],
     force: true,
+  },
+  build: {
+    rollupOptions: {
+      external: [],
+    },
   },
 });
