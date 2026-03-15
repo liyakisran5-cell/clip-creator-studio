@@ -1,24 +1,17 @@
-import { ArrowLeft, Search, TrendingUp, Play } from "lucide-react";
+import { ArrowLeft, Search, TrendingUp } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { mockVideos } from "@/data/mockVideos";
 import { useState, useEffect } from "react";
 
 const trendingHashtags = [
-  { tag: "#viral", views: "2.5B" },
-  { tag: "#dance", views: "1.8B" },
-  { tag: "#cooking", views: "900M" },
-  { tag: "#funny", views: "3.1B" },
-  { tag: "#pakistan", views: "450M" },
-  { tag: "#travel", views: "1.2B" },
-  { tag: "#fitness", views: "780M" },
-  { tag: "#trending", views: "5B" },
+  { tag: "#viral" },
+  { tag: "#dance" },
+  { tag: "#cooking" },
+  { tag: "#funny" },
+  { tag: "#pakistan" },
+  { tag: "#travel" },
+  { tag: "#fitness" },
+  { tag: "#trending" },
 ];
-
-function formatCount(n: number): string {
-  if (n >= 1_000_000) return (n / 1_000_000).toFixed(1) + "M";
-  if (n >= 1_000) return (n / 1_000).toFixed(1) + "K";
-  return n.toString();
-}
 
 export default function DiscoverPage() {
   const navigate = useNavigate();
@@ -29,14 +22,6 @@ export default function DiscoverPage() {
     const q = searchParams.get("q");
     if (q) setQuery(q);
   }, [searchParams]);
-
-  const filtered = query
-    ? mockVideos.filter(
-        (v) =>
-          v.caption.toLowerCase().includes(query.toLowerCase()) ||
-          v.username.toLowerCase().includes(query.toLowerCase())
-      )
-    : mockVideos;
 
   return (
     <div className="dark min-h-screen bg-background text-foreground pb-20">
@@ -68,26 +53,21 @@ export default function DiscoverPage() {
                 onClick={() => setQuery(h.tag.replace("#", ""))}
                 className="bg-muted rounded-full px-3 py-1.5 text-xs font-display text-foreground hover:bg-muted-foreground/20 transition"
               >
-                {h.tag} <span className="text-muted-foreground ml-1">{h.views}</span>
+                {h.tag}
               </button>
             ))}
           </div>
         </div>
       )}
 
-      <div className="grid grid-cols-2 gap-1 px-1">
-        {filtered.map((v) => (
-          <div key={v.id} className={`aspect-[9/16] bg-gradient-to-br ${v.videoColor} relative rounded-lg overflow-hidden group cursor-pointer`} onClick={() => navigate("/")}>
-            <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition" />
-            <div className="absolute bottom-2 left-2 right-2">
-              <p className="text-xs font-body text-foreground line-clamp-2 mb-1">{v.caption}</p>
-              <div className="flex items-center gap-1">
-                <Play className="w-3 h-3 text-foreground fill-foreground" />
-                <span className="text-[10px] font-display text-foreground">{formatCount(v.views)}</span>
-              </div>
-            </div>
-          </div>
-        ))}
+      <div className="flex flex-col items-center justify-center py-20 px-6 text-center gap-3">
+        <Search className="w-10 h-10 text-muted-foreground" />
+        <p className="font-display font-semibold text-foreground">
+          {query ? `No results for "${query}"` : "Search for videos or creators"}
+        </p>
+        <p className="text-xs text-muted-foreground font-body">
+          {query ? "Try a different keyword or hashtag." : "Type above to start searching."}
+        </p>
       </div>
     </div>
   );

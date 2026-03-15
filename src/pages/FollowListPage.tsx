@@ -1,13 +1,6 @@
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Users } from "lucide-react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { mockUsers } from "@/data/mockVideos";
 import { useState } from "react";
-
-function formatCount(n: number): string {
-  if (n >= 1_000_000) return (n / 1_000_000).toFixed(1) + "M";
-  if (n >= 1_000) return (n / 1_000).toFixed(1) + "K";
-  return n.toString();
-}
 
 export default function FollowListPage() {
   const navigate = useNavigate();
@@ -15,11 +8,6 @@ export default function FollowListPage() {
   const [searchParams] = useSearchParams();
   const tab = searchParams.get("tab") || "followers";
   const [activeTab, setActiveTab] = useState<"followers" | "following">(tab as "followers" | "following");
-  const [followState, setFollowState] = useState<Record<string, boolean>>({});
-
-  const toggleFollow = (id: string) => {
-    setFollowState((prev) => ({ ...prev, [id]: !prev[id] }));
-  };
 
   return (
     <div className="dark min-h-screen bg-background text-foreground">
@@ -30,7 +18,6 @@ export default function FollowListPage() {
         <span className="font-display font-bold text-base">{username}</span>
       </div>
 
-      {/* Tabs */}
       <div className="flex border-b border-border">
         <button
           onClick={() => setActiveTab("followers")}
@@ -46,32 +33,18 @@ export default function FollowListPage() {
         </button>
       </div>
 
-      {/* List */}
-      <div className="divide-y divide-border">
-        {mockUsers.map((u) => (
-          <div key={u.id} className="flex items-center gap-3 px-4 py-3">
-            <button
-              onClick={() => navigate(`/profile/${encodeURIComponent(u.username)}`)}
-              className="w-11 h-11 rounded-full bg-gradient-to-br from-tiktok-pink to-tiktok-cyan flex items-center justify-center text-foreground font-display font-bold text-sm flex-shrink-0"
-            >
-              {u.displayName.charAt(0)}
-            </button>
-            <div className="flex-1 min-w-0" onClick={() => navigate(`/profile/${encodeURIComponent(u.username)}`)}>
-              <p className="font-display font-semibold text-sm truncate">{u.username}</p>
-              <p className="text-xs text-muted-foreground font-body truncate">{u.displayName} · {formatCount(u.followers)} followers</p>
-            </div>
-            <button
-              onClick={() => toggleFollow(u.id)}
-              className={`px-4 py-1.5 rounded-md text-xs font-display font-semibold transition ${
-                followState[u.id]
-                  ? "bg-muted text-foreground border border-border"
-                  : "bg-tiktok-pink text-primary-foreground"
-              }`}
-            >
-              {followState[u.id] ? "Following" : "Follow"}
-            </button>
-          </div>
-        ))}
+      <div className="flex flex-col items-center justify-center py-24 gap-3 text-center px-6">
+        <div className="w-14 h-14 rounded-full bg-muted flex items-center justify-center">
+          <Users className="w-7 h-7 text-muted-foreground" />
+        </div>
+        <p className="font-display font-semibold text-foreground">
+          {activeTab === "followers" ? "No Followers Yet" : "Not Following Anyone"}
+        </p>
+        <p className="text-xs text-muted-foreground font-body">
+          {activeTab === "followers"
+            ? "When people follow this account, they will appear here."
+            : "Accounts this user follows will appear here."}
+        </p>
       </div>
     </div>
   );

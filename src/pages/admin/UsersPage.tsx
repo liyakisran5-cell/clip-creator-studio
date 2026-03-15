@@ -1,23 +1,6 @@
-import { mockUsers } from "@/data/mockVideos";
-import { BadgeCheck } from "lucide-react";
-import { useState } from "react";
-import { toast } from "sonner";
+import { Users } from "lucide-react";
 
 export default function UsersPage() {
-  const [users, setUsers] = useState(mockUsers.map((u) => ({ ...u })));
-
-  const toggleVerified = (id: string) => {
-    setUsers((prev) =>
-      prev.map((u) => {
-        if (u.id === id) {
-          toast.success(u.verified ? `Removed verification from ${u.displayName}` : `${u.displayName} is now verified ✓`);
-          return { ...u, verified: !u.verified };
-        }
-        return u;
-      })
-    );
-  };
-
   return (
     <div className="p-6 max-w-7xl mx-auto">
       <div className="mb-8">
@@ -40,49 +23,15 @@ export default function UsersPage() {
               </tr>
             </thead>
             <tbody>
-              {users.map((u) => (
-                <tr key={u.id} className="border-b border-border last:border-0 hover:bg-muted/50 transition-colors">
-                  <td className="p-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-display font-bold">
-                        {u.displayName.charAt(0)}
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-1">
-                          <p className="font-display font-medium text-foreground">{u.displayName}</p>
-                          {u.verified && <BadgeCheck className="w-3.5 h-3.5 text-primary" />}
-                        </div>
-                        <p className="text-xs font-body text-muted-foreground">{u.username}</p>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="p-4 text-sm font-body text-foreground">{(u.followers / 1000).toFixed(0)}K</td>
-                  <td className="p-4 text-sm font-body text-foreground">{u.videos}</td>
-                  <td className="p-4 text-sm font-body text-foreground">{(u.likes / 1_000_000).toFixed(1)}M</td>
-                  <td className="p-4 text-sm font-body text-muted-foreground">{u.joined}</td>
-                  <td className="p-4">
-                    <button
-                      onClick={() => toggleVerified(u.id)}
-                      className={`px-3 py-1 rounded-full text-xs font-display font-semibold transition ${
-                        u.verified
-                          ? "bg-primary/10 text-primary"
-                          : "bg-muted text-muted-foreground hover:bg-primary/10 hover:text-primary"
-                      }`}
-                    >
-                      {u.verified ? "✓ Verified" : "Verify"}
-                    </button>
-                  </td>
-                  <td className="p-4">
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-display font-medium ${
-                      u.status === "active"
-                        ? "bg-success/10 text-success"
-                        : "bg-destructive/10 text-destructive"
-                    }`}>
-                      {u.status}
-                    </span>
-                  </td>
-                </tr>
-              ))}
+              <tr>
+                <td colSpan={7} className="p-12 text-center">
+                  <div className="flex flex-col items-center gap-3">
+                    <Users className="w-10 h-10 text-muted-foreground" />
+                    <p className="font-display font-semibold text-foreground">No Users Yet</p>
+                    <p className="text-sm text-muted-foreground font-body">Users who sign up will appear here.</p>
+                  </div>
+                </td>
+              </tr>
             </tbody>
           </table>
         </div>
