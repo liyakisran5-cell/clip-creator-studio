@@ -1,26 +1,23 @@
-import { X, Copy, MessageCircle, Send, Link2, Check } from "lucide-react";
+import { X, Copy, Send, Link2, Check, Download } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useState } from "react";
 import { toast } from "sonner";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface ShareSheetProps {
   open: boolean;
   onClose: () => void;
   videoId: string;
+  videoColor?: string;
 }
 
-const shareOptions = [
-  { icon: Send, label: "WhatsApp", color: "bg-green-600" },
-  { icon: MessageCircle, label: "Message", color: "bg-primary" },
-  { icon: Copy, label: "Copy Link", color: "bg-muted" },
-];
-
-export default function ShareSheet({ open, onClose, videoId }: ShareSheetProps) {
+export default function ShareSheet({ open, onClose, videoId, videoColor = "from-tiktok-pink to-tiktok-cyan" }: ShareSheetProps) {
   const [copied, setCopied] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+  const { user } = useAuth();
 
   const handleShare = async (label: string) => {
     const url = `${window.location.origin}/video/${videoId}`;
-
     if (label === "Copy Link") {
       await navigator.clipboard.writeText(url);
       setCopied(true);
@@ -28,7 +25,6 @@ export default function ShareSheet({ open, onClose, videoId }: ShareSheetProps) 
       setTimeout(() => setCopied(false), 2000);
       return;
     }
-
     if (navigator.share) {
       try {
         await navigator.share({ title: "Check this video!", url });
@@ -40,17 +36,72 @@ export default function ShareSheet({ open, onClose, videoId }: ShareSheetProps) 
     onClose();
   };
 
+  const handleWatermarkDownload = async () => {
+    setDownloading(true);
+    try {
+      const canvas = document.createElement("canvas");
+      canvas.width = 720;
+      canvas.height = 1280;
+      const ctx = canvas.getContext("2d")!;
+
+      const gradient = ctx.createLinearGradient(0, 0, 720, 1280);
+      gradient.addColorStop(0, "#fe2c55");
+      gradient.addColorStop(1, "#25f4ee");
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, 720, 1280);
+
+      ctx.fillStyle = "rgba(0,0,0,0.3)";
+      ctx.fillRect(0, 1100, 720, 180);
+
+      ctx.fillStyle = "rgba(255,255,255,0.15)";
+      ctx.font = "bold 60px Arial";
+      ctx.textAlign = "center";
+      ctx.fillText("TikTok", 360, 640);
+
+      ctx.fillStyle = "white";
+      ctx.font = "bold 36px Arial";
+      ctx.textAlign = "left";
+      ctx.fillText("TikTok", 30, 1150);
+
+      ctx.font = "24px Arial";
+      ctx.fillStyle = "rgba(255,255,255,0.8)";
+      const handle = user?.username ? `@${user.username.replace("@", "")}` : "@tiktok_user";
+      ctx.fillText(handle, 30, 1190);
+
+      ctx.font = "20px Arial";
+      ctx.textAlign = "right";
+      ctx.fillStyle = "rgba(255,255,255,0.7)";
+      ctx.fillText(`#${videoId}`, 690, 1240);
+
+      canvas.toBlob((blob) => {
+        if (!blob) return;
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `tiktok_${videoId}_watermarked.png`;
+        a.click();
+        URL.revokeObjectURL(url);
+        toast.success("Video downloaded with watermark! 🎬");
+      }, "image/png");
+    } catch (e) {
+      toast.error("Download failed");
+    } finally {
+      setDownloading(false);
+    }
+    onClose();
+  };
+
+  const shareOptions = [
+    { icon: Send, label: "WhatsApp", color: "bg-green-600", action: () => handleShare("WhatsApp") },
+    { icon: Link2, label: "Copy Link", color: "bg-muted", action: () => handleShare("Copy Link") },
+    { icon: Download, label: "Download", color: "bg-tiktok-pink", action: handleWatermarkDownload },
+  ];
+
   return (
     <AnimatePresence>
       {open && (
         <>
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-40 bg-background/40"
-            onClick={onClose}
-          />
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-40 bg-background/40" onClick={onClose} />
           <motion.div
             initial={{ y: "100%" }}
             animate={{ y: 0 }}
@@ -63,14 +114,16 @@ export default function ShareSheet({ open, onClose, videoId }: ShareSheetProps) 
             </div>
             <div className="flex items-center justify-between mb-4">
               <span className="font-display font-bold text-sm text-foreground">Share to</span>
-              <button onClick={onClose}><X className="w-5 h-5 text-muted-foreground" /></button>
+              <button onClick={onClose} data-testid="btn-close-share"><X className="w-5 h-5 text-muted-foreground" /></button>
             </div>
-            <div className="flex gap-6 justify-center pb-4">
+            <div className="flex gap-6 justify-center pb-2">
               {shareOptions.map((opt) => (
-                <button key={opt.label} onClick={() => handleShare(opt.label)} className="flex flex-col items-center gap-2">
-                  <div className={`w-14 h-14 rounded-full ${opt.color} flex items-center justify-center`}>
+                <button key={opt.label} data-testid={`btn-share-${opt.label.toLowerCase().replace(" ", "-")}`} onClick={opt.action} disabled={downloading && opt.label === "Download"} className="flex flex-col items-center gap-2">
+                  <div className={`w-14 h-14 rounded-full ${opt.color} flex items-center justify-center transition`}>
                     {opt.label === "Copy Link" && copied ? (
                       <Check className="w-6 h-6 text-foreground" />
+                    ) : downloading && opt.label === "Download" ? (
+                      <div className="w-5 h-5 rounded-full border-2 border-white border-t-transparent animate-spin" />
                     ) : (
                       <opt.icon className="w-6 h-6 text-foreground" />
                     )}
@@ -79,6 +132,9 @@ export default function ShareSheet({ open, onClose, videoId }: ShareSheetProps) 
                 </button>
               ))}
             </div>
+            <p className="text-center text-[10px] text-muted-foreground font-body pb-2 mt-2">
+              Downloaded videos will include TikTok watermark + your ID
+            </p>
           </motion.div>
         </>
       )}

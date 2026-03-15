@@ -1,17 +1,27 @@
-import { Home, Search, Plus, MessageSquare, User } from "lucide-react";
+import { Home, Search, Plus, Music2, User } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 
 const navItems = [
   { icon: Home, label: "Home", path: "/" },
   { icon: Search, label: "Discover", path: "/discover" },
   { icon: Plus, label: "", path: "/upload", isCreate: true },
-  { icon: MessageSquare, label: "Inbox", path: "/inbox" },
+  { icon: Music2, label: "Sounds", path: "/sounds" },
   { icon: User, label: "Profile", path: "/profile/@you" },
 ];
 
 export default function BottomNav() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { user } = useAuth();
+
+  const handleNav = (path: string) => {
+    if (path === "/profile/@you" && user?.username) {
+      navigate(`/profile/${encodeURIComponent(user.username)}`);
+    } else {
+      navigate(path);
+    }
+  };
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 flex items-center justify-around py-2 pb-safe bg-background/90 backdrop-blur-md border-t border-foreground/10">
@@ -19,7 +29,8 @@ export default function BottomNav() {
         item.isCreate ? (
           <button
             key="create"
-            onClick={() => navigate(item.path)}
+            data-testid="btn-nav-create"
+            onClick={() => handleNav(item.path)}
             className="relative flex items-center justify-center w-12 h-8 rounded-lg overflow-hidden"
           >
             <div className="absolute inset-0 bg-tiktok-cyan rounded-lg translate-x-[3px]" />
@@ -31,11 +42,22 @@ export default function BottomNav() {
         ) : (
           <button
             key={item.label}
-            onClick={() => navigate(item.path)}
+            data-testid={`btn-nav-${item.label.toLowerCase()}`}
+            onClick={() => handleNav(item.path)}
             className="flex flex-col items-center gap-0.5"
           >
-            <item.icon className={`w-6 h-6 ${location.pathname === item.path ? "text-foreground" : "text-foreground/50"}`} />
-            <span className={`text-[10px] font-display ${location.pathname === item.path ? "text-foreground" : "text-foreground/50"}`}>
+            <item.icon className={`w-6 h-6 ${
+              location.pathname === item.path ||
+              (item.path === "/profile/@you" && location.pathname.startsWith("/profile/"))
+                ? "text-foreground"
+                : "text-foreground/50"
+            }`} />
+            <span className={`text-[10px] font-display ${
+              location.pathname === item.path ||
+              (item.path === "/profile/@you" && location.pathname.startsWith("/profile/"))
+                ? "text-foreground"
+                : "text-foreground/50"
+            }`}>
               {item.label}
             </span>
           </button>
