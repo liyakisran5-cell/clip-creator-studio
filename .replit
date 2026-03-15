@@ -7,8 +7,8 @@ integrations = ["firebase_barebones_javascript:1.0.0"]
 channel = "stable-25_05"
 
 [deployment]
-deploymentTarget = "autoscale"
-run = ["node", "dist/index.cjs"]
+deploymentTarget = "static"
+run = ["node", "./dist/index.cjs"]
 build = ["npm", "run", "build"]
 publicDir = "dist"
 
@@ -40,3 +40,7 @@ externalPort = 3000
 [[ports]]
 localPort = 5000
 externalPort = 80
+
+[[ports]]
+localPort = 5001
+externalPort = 3001
