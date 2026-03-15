@@ -86,7 +86,7 @@ export default defineConfig({
       overlay: false,
     },
   },
-  cacheDir: './node_modules/.vite-fresh',
+  cacheDir: path.resolve(__dirname, 'node_modules/.vite'),
   plugins: [react(), generateServerPlugin()],
   resolve: {
     alias: {
@@ -94,9 +94,7 @@ export default defineConfig({
     },
   },
   optimizeDeps: {
+    disabled: false,
     force: true,
-    esbuildOptions: {
-      target: 'esnext',
-    },
   },
 });
