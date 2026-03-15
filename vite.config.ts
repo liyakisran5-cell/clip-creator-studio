@@ -86,7 +86,7 @@ export default defineConfig({
       overlay: false,
     },
   },
-  cacheDir: '.vite-cache-v2',
+  cacheDir: './node_modules/.vite-fresh',
   plugins: [react(), generateServerPlugin()],
   resolve: {
     alias: {
@@ -95,7 +95,8 @@ export default defineConfig({
   },
   optimizeDeps: {
     force: true,
-    entries: ['src/main.tsx'],
-    include: ['react', 'react-dom', 'react-router-dom', '@supabase/supabase-js'],
+    esbuildOptions: {
+      target: 'esnext',
+    },
   },
 });
