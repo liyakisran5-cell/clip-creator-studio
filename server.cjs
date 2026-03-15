@@ -1,14 +1,8 @@
-import { defineConfig, Plugin } from "vite";
-import react from "@vitejs/plugin-react-swc";
-import path from "path";
-import fs from "fs";
-
-const serverCjs = `
 const http = require("http");
 const fs = require("fs");
 const path = require("path");
 
-const DIST_DIR = path.join(__dirname);
+const DIST_DIR = path.join(__dirname, "dist");
 const PORT = process.env.PORT || 3000;
 
 const MIME_TYPES = {
@@ -30,8 +24,9 @@ const MIME_TYPES = {
 };
 
 const server = http.createServer((req, res) => {
-  const urlPath = req.url.split("?")[0];
-  const filePath = path.join(DIST_DIR, urlPath);
+  let urlPath = req.url.split("?")[0];
+
+  let filePath = path.join(DIST_DIR, urlPath);
 
   const tryServeFile = (fp, fallbackToIndex) => {
     fs.stat(fp, (err, stat) => {
@@ -64,32 +59,5 @@ const server = http.createServer((req, res) => {
 });
 
 server.listen(PORT, "0.0.0.0", () => {
-  console.log("Server running on port " + PORT);
-});
-`;
-
-function generateServerPlugin(): Plugin {
-  return {
-    name: "generate-server-cjs",
-    closeBundle() {
-      fs.writeFileSync(path.resolve(__dirname, "dist/index.cjs"), serverCjs);
-    },
-  };
-}
-
-export default defineConfig({
-  server: {
-    host: "0.0.0.0",
-    port: 5000,
-    allowedHosts: true,
-    hmr: {
-      overlay: false,
-    },
-  },
-  plugins: [react(), generateServerPlugin()],
-  resolve: {
-    alias: {
-      "@": path.resolve(__dirname, "./src"),
-    },
-  },
+  console.log(`Server running on port ${PORT}`);
 });
