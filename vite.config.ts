@@ -86,7 +86,7 @@ export default defineConfig({
       overlay: false,
     },
   },
-  cacheDir: '.vite-cache-new',
+  cacheDir: '.vite-cache-v2',
   plugins: [react(), generateServerPlugin()],
   resolve: {
     alias: {
@@ -95,5 +95,7 @@ export default defineConfig({
   },
   optimizeDeps: {
     force: true,
+    entries: ['src/main.tsx'],
+    include: ['react', 'react-dom', 'react-router-dom', '@supabase/supabase-js'],
   },
 });
