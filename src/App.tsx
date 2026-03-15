@@ -8,6 +8,10 @@ import ProfilePage from "./pages/ProfilePage";
 import DiscoverPage from "./pages/DiscoverPage";
 import UploadPage from "./pages/UploadPage";
 import InboxPage from "./pages/InboxPage";
+import DMPage from "./pages/DMPage";
+import FollowListPage from "./pages/FollowListPage";
+import AnalyticsPage from "./pages/AnalyticsPage";
+import SettingsUserPage from "./pages/SettingsUserPage";
 import SoundPage from "@/components/tiktok/SoundPage";
 import AdminLayout from "./layouts/AdminLayout";
 import Dashboard from "./pages/admin/Dashboard";
@@ -31,6 +35,10 @@ const App = () => (
           <Route path="/discover" element={<DiscoverPage />} />
           <Route path="/upload" element={<UploadPage />} />
           <Route path="/inbox" element={<InboxPage />} />
+          <Route path="/dm/:username" element={<DMPage />} />
+          <Route path="/follow/:username" element={<FollowListPage />} />
+          <Route path="/analytics" element={<AnalyticsPage />} />
+          <Route path="/settings" element={<SettingsUserPage />} />
           <Route path="/sound/:songName" element={<SoundPage />} />
           <Route path="/admin" element={<AdminLayout />}>
             <Route index element={<Dashboard />} />

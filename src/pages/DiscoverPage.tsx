@@ -1,7 +1,7 @@
 import { ArrowLeft, Search, TrendingUp, Play } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { mockVideos } from "@/data/mockVideos";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 const trendingHashtags = [
   { tag: "#viral", views: "2.5B" },
@@ -14,9 +14,21 @@ const trendingHashtags = [
   { tag: "#trending", views: "5B" },
 ];
 
+function formatCount(n: number): string {
+  if (n >= 1_000_000) return (n / 1_000_000).toFixed(1) + "M";
+  if (n >= 1_000) return (n / 1_000).toFixed(1) + "K";
+  return n.toString();
+}
+
 export default function DiscoverPage() {
   const navigate = useNavigate();
-  const [query, setQuery] = useState("");
+  const [searchParams] = useSearchParams();
+  const [query, setQuery] = useState(searchParams.get("q") || "");
+
+  useEffect(() => {
+    const q = searchParams.get("q");
+    if (q) setQuery(q);
+  }, [searchParams]);
 
   const filtered = query
     ? mockVideos.filter(
@@ -28,7 +40,6 @@ export default function DiscoverPage() {
 
   return (
     <div className="dark min-h-screen bg-background text-foreground pb-20">
-      {/* Header */}
       <div className="flex items-center gap-3 px-4 py-3">
         <button onClick={() => navigate(-1)}>
           <ArrowLeft className="w-6 h-6 text-foreground" />
@@ -38,13 +49,12 @@ export default function DiscoverPage() {
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search videos, creators..."
+            placeholder="Search videos, creators, hashtags..."
             className="w-full bg-muted rounded-full pl-10 pr-4 py-2.5 text-sm font-body text-foreground placeholder:text-muted-foreground outline-none"
           />
         </div>
       </div>
 
-      {/* Trending hashtags */}
       {!query && (
         <div className="px-4 mb-4">
           <h3 className="font-display font-bold text-sm mb-3 flex items-center gap-2">
@@ -65,7 +75,6 @@ export default function DiscoverPage() {
         </div>
       )}
 
-      {/* Video grid */}
       <div className="grid grid-cols-2 gap-1 px-1">
         {filtered.map((v) => (
           <div key={v.id} className={`aspect-[9/16] bg-gradient-to-br ${v.videoColor} relative rounded-lg overflow-hidden group cursor-pointer`} onClick={() => navigate("/")}>
@@ -74,7 +83,7 @@ export default function DiscoverPage() {
               <p className="text-xs font-body text-foreground line-clamp-2 mb-1">{v.caption}</p>
               <div className="flex items-center gap-1">
                 <Play className="w-3 h-3 text-foreground fill-foreground" />
-                <span className="text-[10px] font-display text-foreground">{(v.likes / 1000).toFixed(0)}K</span>
+                <span className="text-[10px] font-display text-foreground">{formatCount(v.views)}</span>
               </div>
             </div>
           </div>

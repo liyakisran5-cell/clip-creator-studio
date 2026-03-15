@@ -1,11 +1,28 @@
 import { mockUsers } from "@/data/mockVideos";
+import { BadgeCheck } from "lucide-react";
+import { useState } from "react";
+import { toast } from "sonner";
 
 export default function UsersPage() {
+  const [users, setUsers] = useState(mockUsers.map((u) => ({ ...u })));
+
+  const toggleVerified = (id: string) => {
+    setUsers((prev) =>
+      prev.map((u) => {
+        if (u.id === id) {
+          toast.success(u.verified ? `Removed verification from ${u.displayName}` : `${u.displayName} is now verified ✓`);
+          return { ...u, verified: !u.verified };
+        }
+        return u;
+      })
+    );
+  };
+
   return (
     <div className="p-6 max-w-7xl mx-auto">
       <div className="mb-8">
         <h1 className="text-3xl font-display font-bold text-foreground">Users</h1>
-        <p className="text-muted-foreground font-body mt-1">Manage platform users</p>
+        <p className="text-muted-foreground font-body mt-1">Manage platform users & verification badges</p>
       </div>
 
       <div className="bg-card rounded-xl border border-border">
@@ -18,11 +35,12 @@ export default function UsersPage() {
                 <th className="text-left p-4 text-sm font-display font-medium text-muted-foreground">Videos</th>
                 <th className="text-left p-4 text-sm font-display font-medium text-muted-foreground">Total Likes</th>
                 <th className="text-left p-4 text-sm font-display font-medium text-muted-foreground">Joined</th>
+                <th className="text-left p-4 text-sm font-display font-medium text-muted-foreground">Verified</th>
                 <th className="text-left p-4 text-sm font-display font-medium text-muted-foreground">Status</th>
               </tr>
             </thead>
             <tbody>
-              {mockUsers.map((u) => (
+              {users.map((u) => (
                 <tr key={u.id} className="border-b border-border last:border-0 hover:bg-muted/50 transition-colors">
                   <td className="p-4">
                     <div className="flex items-center gap-3">
@@ -30,7 +48,10 @@ export default function UsersPage() {
                         {u.displayName.charAt(0)}
                       </div>
                       <div>
-                        <p className="font-display font-medium text-foreground">{u.displayName}</p>
+                        <div className="flex items-center gap-1">
+                          <p className="font-display font-medium text-foreground">{u.displayName}</p>
+                          {u.verified && <BadgeCheck className="w-3.5 h-3.5 text-primary" />}
+                        </div>
                         <p className="text-xs font-body text-muted-foreground">{u.username}</p>
                       </div>
                     </div>
@@ -39,6 +60,18 @@ export default function UsersPage() {
                   <td className="p-4 text-sm font-body text-foreground">{u.videos}</td>
                   <td className="p-4 text-sm font-body text-foreground">{(u.likes / 1_000_000).toFixed(1)}M</td>
                   <td className="p-4 text-sm font-body text-muted-foreground">{u.joined}</td>
+                  <td className="p-4">
+                    <button
+                      onClick={() => toggleVerified(u.id)}
+                      className={`px-3 py-1 rounded-full text-xs font-display font-semibold transition ${
+                        u.verified
+                          ? "bg-primary/10 text-primary"
+                          : "bg-muted text-muted-foreground hover:bg-primary/10 hover:text-primary"
+                      }`}
+                    >
+                      {u.verified ? "✓ Verified" : "Verify"}
+                    </button>
+                  </td>
                   <td className="p-4">
                     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-display font-medium ${
                       u.status === "active"
