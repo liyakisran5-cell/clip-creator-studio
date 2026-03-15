@@ -1,19 +1,6 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
-import {
-  auth,
-  isConfigured,
-  GoogleAuthProvider,
-  signInWithPopup,
-  signInWithEmailAndPassword,
-  createUserWithEmailAndPassword,
-  signInWithPhoneNumber,
-  sendPasswordResetEmail,
-  RecaptchaVerifier,
-  updateProfile,
-  signOut,
-  onAuthStateChanged,
-  User,
-} from "@/lib/firebase";
+import { supabase, isSupabaseConfigured } from "@/lib/supabase";
+import type { User as SupabaseUser, Session } from "@supabase/supabase-js";
 
 export interface AppUser {
   uid: string;
@@ -43,18 +30,18 @@ export interface DeviceInfo {
 
 interface AuthContextType {
   user: AppUser | null;
-  firebaseUser: User | null;
+  supabaseUser: SupabaseUser | null;
+  session: Session | null;
   loading: boolean;
-  isFirebaseReady: boolean;
+  isSupabaseReady: boolean;
   signInWithGoogle: () => Promise<void>;
   signInWithEmail: (email: string, password: string) => Promise<void>;
   signUpWithEmail: (email: string, password: string, displayName: string) => Promise<void>;
-  signInWithPhone: (phone: string, recaptchaVerifier: RecaptchaVerifier) => Promise<{ confirm: (code: string) => Promise<void> }>;
   signInWithUsername: (username: string, password: string) => Promise<void>;
   forgotPassword: (email: string) => Promise<void>;
   logout: () => Promise<void>;
   setUsername: (username: string) => Promise<boolean>;
-  checkUsernameAvailable: (username: string) => boolean;
+  checkUsernameAvailable: (username: string) => Promise<boolean>;
   updateSocialLinks: (links: AppUser["socialLinks"]) => void;
   logoutDevice: (deviceId: string) => void;
 }
@@ -95,11 +82,13 @@ function getCurrentDeviceInfo(): DeviceInfo {
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [firebaseUser, setFirebaseUser] = useState<User | null>(null);
+  const [supabaseUser, setSupabaseUser] = useState<SupabaseUser | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<AppUser | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Check for stored user first
     const storedUid = localStorage.getItem(CURRENT_USER_KEY);
     if (storedUid) {
       const users = getStoredUsers();
@@ -108,131 +97,93 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     }
 
-    if (!isConfigured || !auth) {
+    if (!isSupabaseConfigured) {
       setLoading(false);
       return;
     }
 
-    const unsub = onAuthStateChanged(auth, (fbUser) => {
-      setFirebaseUser(fbUser);
-      if (fbUser) {
-        const users = getStoredUsers();
-        const existing = users[fbUser.uid];
-        const appUser: AppUser = existing || {
-          uid: fbUser.uid,
-          email: fbUser.email,
-          displayName: fbUser.displayName,
-          username: null,
-          phoneNumber: fbUser.phoneNumber,
-          photoURL: fbUser.photoURL,
-          provider: fbUser.providerData[0]?.providerId.includes("google") ? "google" : fbUser.phoneNumber ? "phone" : "email",
-          devices: [getCurrentDeviceInfo()],
-        };
-        saveUser(appUser);
-        localStorage.setItem(CURRENT_USER_KEY, fbUser.uid);
-        setUser(appUser);
-      } else {
-        setUser(null);
-        localStorage.removeItem(CURRENT_USER_KEY);
+    // Get initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setSupabaseUser(session?.user ?? null);
+      if (session?.user) {
+        handleUserLogin(session.user);
       }
       setLoading(false);
     });
 
-    return unsub;
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+      setSupabaseUser(session?.user ?? null);
+      if (session?.user) {
+        handleUserLogin(session.user);
+      } else {
+        setUser(null);
+        localStorage.removeItem(CURRENT_USER_KEY);
+      }
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
+  const handleUserLogin = (sbUser: SupabaseUser) => {
+    const users = getStoredUsers();
+    const existing = users[sbUser.id];
+    const provider = sbUser.app_metadata?.provider;
+    const appUser: AppUser = existing || {
+      uid: sbUser.id,
+      email: sbUser.email || null,
+      displayName: sbUser.user_metadata?.full_name || sbUser.user_metadata?.name || sbUser.email?.split("@")[0] || null,
+      username: null,
+      phoneNumber: sbUser.phone || null,
+      photoURL: sbUser.user_metadata?.avatar_url || sbUser.user_metadata?.picture || null,
+      provider: provider === "google" ? "google" : sbUser.phone ? "phone" : "email",
+      devices: [getCurrentDeviceInfo()],
+    };
+    saveUser(appUser);
+    localStorage.setItem(CURRENT_USER_KEY, sbUser.id);
+    setUser(appUser);
+  };
+
   const signInWithGoogle = async () => {
-    if (!isConfigured || !auth) {
-      const mockUser: AppUser = {
-        uid: `demo_google_${Date.now()}`,
-        email: "demo@gmail.com",
-        displayName: "Demo User",
-        username: null,
-        phoneNumber: null,
-        photoURL: null,
-        provider: "google",
-        devices: [getCurrentDeviceInfo()],
-      };
-      saveUser(mockUser);
-      localStorage.setItem(CURRENT_USER_KEY, mockUser.uid);
-      setUser(mockUser);
-      return;
+    if (!isSupabaseConfigured) {
+      throw new Error("Supabase not configured");
     }
-    const provider = new GoogleAuthProvider();
-    await signInWithPopup(auth, provider);
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: `${window.location.origin}/username-setup`,
+      },
+    });
+    if (error) throw error;
   };
 
   const signInWithEmail = async (email: string, password: string) => {
-    if (!isConfigured || !auth) {
-      const mockUser: AppUser = {
-        uid: `demo_${email}`,
-        email,
-        displayName: email.split("@")[0],
-        username: null,
-        phoneNumber: null,
-        photoURL: null,
-        provider: "email",
-        devices: [getCurrentDeviceInfo()],
-      };
-      saveUser(mockUser);
-      localStorage.setItem(CURRENT_USER_KEY, mockUser.uid);
-      setUser(mockUser);
-      return;
+    if (!isSupabaseConfigured) {
+      throw new Error("Supabase not configured");
     }
-    await signInWithEmailAndPassword(auth, email, password);
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+    if (error) throw error;
   };
 
   const signUpWithEmail = async (email: string, password: string, displayName: string) => {
-    if (!isConfigured || !auth) {
-      const mockUser: AppUser = {
-        uid: `demo_${email}_${Date.now()}`,
-        email,
-        displayName,
-        username: null,
-        phoneNumber: null,
-        photoURL: null,
-        provider: "email",
-        devices: [getCurrentDeviceInfo()],
-      };
-      saveUser(mockUser);
-      localStorage.setItem(CURRENT_USER_KEY, mockUser.uid);
-      setUser(mockUser);
-      return;
+    if (!isSupabaseConfigured) {
+      throw new Error("Supabase not configured");
     }
-    const cred = await createUserWithEmailAndPassword(auth, email, password);
-    await updateProfile(cred.user, { displayName });
-  };
-
-  const signInWithPhone = async (phone: string, recaptchaVerifier: RecaptchaVerifier) => {
-    if (!isConfigured || !auth) {
-      return {
-        confirm: async (code: string) => {
-          if (code === "123456") {
-            const mockUser: AppUser = {
-              uid: `demo_${phone}`,
-              email: null,
-              displayName: phone,
-              username: null,
-              phoneNumber: phone,
-              photoURL: null,
-              provider: "phone",
-              devices: [getCurrentDeviceInfo()],
-            };
-            saveUser(mockUser);
-            localStorage.setItem(CURRENT_USER_KEY, mockUser.uid);
-            setUser(mockUser);
-          } else {
-            throw new Error("Invalid OTP. (Demo mode: use 123456)");
-          }
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          full_name: displayName,
         },
-      };
-    }
-    const result = await signInWithPhoneNumber(auth, phone, recaptchaVerifier);
-    return {
-      confirm: async (code: string) => {
-        await result.confirm(code);
       },
-    };
+    });
+    if (error) throw error;
   };
 
   const signInWithUsername = async (username: string, password: string) => {
@@ -241,36 +192,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       (u) => u.username?.toLowerCase() === username.toLowerCase()
     );
     if (!found) throw new Error("Username not found. Please check and try again.");
-    if (!isConfigured || !auth) {
-      localStorage.setItem(CURRENT_USER_KEY, found.uid);
-      setUser(found);
-      return;
-    }
+    
     if (found.email) {
-      await signInWithEmailAndPassword(auth, found.email, password);
+      await signInWithEmail(found.email, password);
     } else {
-      throw new Error("Cannot login with username for phone accounts. Use phone OTP.");
+      throw new Error("Cannot login with username for accounts without email.");
     }
   };
 
   const forgotPassword = async (email: string) => {
-    if (!isConfigured || !auth) {
-      await new Promise((r) => setTimeout(r, 1000));
-      return;
+    if (!isSupabaseConfigured) {
+      throw new Error("Supabase not configured");
     }
-    await sendPasswordResetEmail(auth, email);
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    if (error) throw error;
   };
 
   const logout = async () => {
-    if (isConfigured && auth) {
-      await signOut(auth);
+    if (isSupabaseConfigured) {
+      await supabase.auth.signOut();
     }
     localStorage.removeItem(CURRENT_USER_KEY);
     setUser(null);
-    setFirebaseUser(null);
+    setSupabaseUser(null);
+    setSession(null);
   };
 
-  const checkUsernameAvailable = (username: string): boolean => {
+  const checkUsernameAvailable = async (username: string): Promise<boolean> => {
     const users = getStoredUsers();
     return !Object.values(users).some(
       (u) => u.username?.toLowerCase() === username.toLowerCase()
@@ -278,14 +228,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const setUsername = async (username: string): Promise<boolean> => {
-    if (!checkUsernameAvailable(username)) return false;
+    const isAvailable = await checkUsernameAvailable(username);
+    if (!isAvailable) return false;
     if (!user) return false;
     const updated = { ...user, username };
     saveUser(updated);
     setUser(updated);
-    if (isConfigured && auth && firebaseUser) {
-      await updateProfile(firebaseUser, { displayName: username });
-    }
     return true;
   };
 
@@ -308,13 +256,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     <AuthContext.Provider
       value={{
         user,
-        firebaseUser,
+        supabaseUser,
+        session,
         loading,
-        isFirebaseReady: isConfigured,
+        isSupabaseReady: isSupabaseConfigured,
         signInWithGoogle,
         signInWithEmail,
         signUpWithEmail,
-        signInWithPhone,
         signInWithUsername,
         forgotPassword,
         logout,
