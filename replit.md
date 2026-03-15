@@ -10,26 +10,25 @@ A full-featured TikTok-style social media frontend application built with React,
 - **Routing**: React Router DOM v6
 - **State/Data**: TanStack React Query
 - **Animations**: Framer Motion
-- **Auth**: Firebase Auth (Google, Email, Phone OTP, Username)
+- **Auth**: Firebase Auth (Google, Email, Username) with demo mode support
 - **Icons**: Lucide React + react-icons
 
 ## Auth System
-4 login methods implemented in `src/pages/AuthPage.tsx`:
-- **Google Login** - One-tap via Firebase Google provider
+3 login methods implemented in `src/pages/AuthPage.tsx`:
+- **Google Login** - Works in demo mode when Firebase not configured
 - **Email & Password** - Standard login + signup
-- **Phone OTP** - 6-digit SMS verification via Firebase Phone Auth
 - **Username Login** - Username + password via user registry
 
 Auth state managed in `src/contexts/AuthContext.tsx`.
 User data (username, social links, devices) stored in localStorage.
 
-## Firebase Setup Required
-3 environment variables needed for real Firebase auth:
+## Firebase Setup (Optional)
+3 environment variables for full Firebase auth (optional):
 - `VITE_FIREBASE_PROJECT_ID`
 - `VITE_FIREBASE_APP_ID`
 - `VITE_FIREBASE_API_KEY`
 
-Without these, app runs in "demo mode" (local storage auth, OTP demo code: 123456).
+Without Firebase config, app runs in "demo mode" with local storage auth.
 
 ## Pages
 - `/` - Main video feed (For You / Following)
@@ -48,7 +47,7 @@ Without these, app runs in "demo mode" (local storage auth, OTP demo code: 12345
 - `/admin` - Admin panel with analytics charts
 
 ## Key Features Implemented
-1. **OTP SMS Login** - Firebase Phone Auth with 6-digit OTP UI
+1. **Demo Mode Auth** - Google login works without Firebase configuration
 2. **Unique Username Checker** - Real-time availability check while typing
 3. **Video Privacy Toggle** - Public/Private selector on upload
 4. **AI Auto-Captioning** - AI caption generation on upload page
@@ -62,7 +61,7 @@ Without these, app runs in "demo mode" (local storage auth, OTP demo code: 12345
 ## Key Files
 - `src/lib/firebase.ts` - Firebase initialization
 - `src/contexts/AuthContext.tsx` - Auth context + user management
-- `src/pages/AuthPage.tsx` - Full auth UI (all 4 methods)
+- `src/pages/AuthPage.tsx` - Full auth UI (3 login methods)
 - `src/pages/UsernameSetup.tsx` - Username picker after signup
 - `src/pages/SoundsLibraryPage.tsx` - Sounds library
 - `src/data/sounds.ts` - Sounds mock data

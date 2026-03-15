@@ -142,7 +142,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signInWithGoogle = async () => {
-    if (!isConfigured || !auth) throw new Error("Firebase not configured. Please add Firebase credentials.");
+    if (!isConfigured || !auth) {
+      const mockUser: AppUser = {
+        uid: `demo_google_${Date.now()}`,
+        email: "demo@gmail.com",
+        displayName: "Demo User",
+        username: null,
+        phoneNumber: null,
+        photoURL: null,
+        provider: "google",
+        devices: [getCurrentDeviceInfo()],
+      };
+      saveUser(mockUser);
+      localStorage.setItem(CURRENT_USER_KEY, mockUser.uid);
+      setUser(mockUser);
+      return;
+    }
     const provider = new GoogleAuthProvider();
     await signInWithPopup(auth, provider);
   };
