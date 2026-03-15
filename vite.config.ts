@@ -86,6 +86,7 @@ export default defineConfig({
       overlay: false,
     },
   },
+  cacheDir: '.vite-cache-new',
   plugins: [react(), generateServerPlugin()],
   resolve: {
     alias: {
@@ -93,12 +94,6 @@ export default defineConfig({
     },
   },
   optimizeDeps: {
-    exclude: [],
     force: true,
-  },
-  build: {
-    rollupOptions: {
-      external: [],
-    },
   },
 });
