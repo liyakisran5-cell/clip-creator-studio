@@ -7,8 +7,8 @@ integrations = ["firebase_barebones_javascript:1.0.0"]
 channel = "stable-25_05"
 
 [deployment]
-deploymentTarget = "static"
-run = ["node", "./dist/index.cjs"]
+deploymentTarget = "autoscale"
+run = ["node", "dist/index.cjs"]
 build = ["npm", "run", "build"]
 publicDir = "dist"
 
